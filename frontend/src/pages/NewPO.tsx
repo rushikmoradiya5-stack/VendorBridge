@@ -1,14 +1,43 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
-import { vendors } from '@/data/mockData';
+import { useDataStore } from '@/store';
 
 export default function NewPO() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { vendors, addPurchaseOrder } = useDataStore();
+
+  const [selectedVendorId, setSelectedVendorId] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('IT');
+  const [selectedPriority, setSelectedPriority] = useState('medium');
+  const [dueDate, setDueDate] = useState(
+    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  );
+  const [notes, setNotes] = useState('');
   const [lineItems, setLineItems] = useState([
     { id: '1', description: '', qty: 1, unit: 'unit', unitPrice: 0, total: 0 },
   ]);
   const [submitted, setSubmitted] = useState(false);
+
+  // Prefill state from Catalog navigation if available
+  useEffect(() => {
+    if (location.state?.prefilledItem) {
+      const { description, qty, unit, unitPrice, vendorId, department } = location.state.prefilledItem;
+      if (vendorId) setSelectedVendorId(vendorId);
+      if (department) setSelectedDepartment(department);
+      setLineItems([
+        {
+          id: '1',
+          description: description || '',
+          qty: qty || 1,
+          unit: unit || 'unit',
+          unitPrice: unitPrice || 0,
+          total: (qty || 1) * (unitPrice || 0),
+        },
+      ]);
+    }
+  }, [location.state]);
 
   const addLine = () =>
     setLineItems((prev) => [...prev, { id: Date.now().toString(), description: '', qty: 1, unit: 'unit', unitPrice: 0, total: 0 }]);
@@ -33,6 +62,34 @@ export default function NewPO() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedVendorId) return;
+
+    const vendor = vendors.find((v) => v.id === selectedVendorId);
+    if (!vendor) return;
+
+    addPurchaseOrder({
+      vendorId: selectedVendorId,
+      vendorName: vendor.name,
+      priority: selectedPriority as 'low' | 'medium' | 'high' | 'urgent',
+      lineItems: lineItems.map((li, idx) => ({
+        id: `li_${idx}_${Date.now()}`,
+        description: li.description,
+        qty: li.qty,
+        unit: li.unit,
+        unitPrice: li.unitPrice,
+        total: li.total,
+      })),
+      subtotal,
+      tax,
+      total,
+      currency: 'USD',
+      issueDate: new Date().toISOString().split('T')[0],
+      dueDate,
+      department: selectedDepartment,
+      category: vendor.category,
+      notes,
+    });
+
     setSubmitted(true);
     setTimeout(() => navigate('/orders'), 1500);
   };
@@ -54,7 +111,7 @@ export default function NewPO() {
   return (
     <div className="p-6 space-y-5">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate('/orders')} className="btn btn-ghost btn-sm"><ArrowLeft className="w-4 h-4" /></button>
+        <button type="button" onClick={() => navigate('/orders')} className="btn btn-ghost btn-sm"><ArrowLeft className="w-4 h-4" /></button>
         <h1 className="text-xl font-heading font-bold text-slate-800">New Purchase Order</h1>
       </div>
 
@@ -65,7 +122,12 @@ export default function NewPO() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Vendor *</label>
-              <select className="input" required>
+              <select
+                className="input"
+                required
+                value={selectedVendorId}
+                onChange={(e) => setSelectedVendorId(e.target.value)}
+              >
                 <option value="">Select a vendor…</option>
                 {vendors.filter((v) => v.status === 'active').map((v) => (
                   <option key={v.id} value={v.id}>{v.name}</option>
@@ -74,7 +136,12 @@ export default function NewPO() {
             </div>
             <div>
               <label className="label">Department *</label>
-              <select className="input" required>
+              <select
+                className="input"
+                required
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+              >
                 {['IT', 'Operations', 'Finance', 'Admin', 'Production', 'Logistics'].map((d) => (
                   <option key={d}>{d}</option>
                 ))}
@@ -82,18 +149,34 @@ export default function NewPO() {
             </div>
             <div>
               <label className="label">Priority</label>
-              <select className="input">
+              <select
+                className="input"
+                value={selectedPriority}
+                onChange={(e) => setSelectedPriority(e.target.value)}
+              >
                 {['low', 'medium', 'high', 'urgent'].map((p) => <option key={p}>{p}</option>)}
               </select>
             </div>
             <div>
               <label className="label">Due Date *</label>
-              <input type="date" className="input" required />
+              <input
+                type="date"
+                className="input"
+                required
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
             </div>
           </div>
           <div>
             <label className="label">Notes</label>
-            <textarea className="input resize-none" rows={2} placeholder="Any special instructions or notes…" />
+            <textarea
+              className="input resize-none"
+              rows={2}
+              placeholder="Any special instructions or notes…"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
           </div>
         </div>
 
@@ -109,16 +192,16 @@ export default function NewPO() {
             {lineItems.map((line) => (
               <div key={line.id} className="grid grid-cols-12 gap-2 items-center">
                 <div className="col-span-4">
-                  <input className="input text-sm" placeholder="Description" value={line.description} onChange={(e) => updateLine(line.id, 'description', e.target.value)} />
+                  <input className="input text-sm" placeholder="Description" value={line.description} onChange={(e) => updateLine(line.id, 'description', e.target.value)} required />
                 </div>
                 <div className="col-span-2">
-                  <input className="input text-sm" type="number" min="1" placeholder="Qty" value={line.qty} onChange={(e) => updateLine(line.id, 'qty', Number(e.target.value))} />
+                  <input className="input text-sm" type="number" min="1" placeholder="Qty" value={line.qty} onChange={(e) => updateLine(line.id, 'qty', Number(e.target.value))} required />
                 </div>
                 <div className="col-span-2">
-                  <input className="input text-sm" placeholder="Unit" value={line.unit} onChange={(e) => updateLine(line.id, 'unit', e.target.value)} />
+                  <input className="input text-sm" placeholder="Unit" value={line.unit} onChange={(e) => updateLine(line.id, 'unit', e.target.value)} required />
                 </div>
                 <div className="col-span-2">
-                  <input className="input text-sm" type="number" min="0" step="0.01" placeholder="Unit Price" value={line.unitPrice || ''} onChange={(e) => updateLine(line.id, 'unitPrice', Number(e.target.value))} />
+                  <input className="input text-sm" type="number" min="0" step="0.01" placeholder="Unit Price" value={line.unitPrice || ''} onChange={(e) => updateLine(line.id, 'unitPrice', Number(e.target.value))} required />
                 </div>
                 <div className="col-span-1 text-sm font-semibold text-slate-700 text-right">
                   ${line.total.toLocaleString()}
@@ -145,7 +228,7 @@ export default function NewPO() {
         {/* Actions */}
         <div className="flex gap-3 justify-end">
           <button type="button" onClick={() => navigate('/orders')} className="btn btn-outline">Cancel</button>
-          <button type="submit" className="btn btn-secondary">Save as Draft</button>
+          <button type="button" onClick={handleSubmit} className="btn btn-secondary">Save as Draft</button>
           <button type="submit" className="btn btn-primary">Submit for Approval</button>
         </div>
       </form>

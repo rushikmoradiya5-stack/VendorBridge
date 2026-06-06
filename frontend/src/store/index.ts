@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User, Notification } from '@/types';
-import { notifications as initialNotifs } from '@/data/mockData';
+import type { User, Notification, Vendor, PurchaseOrder, Invoice, InvoiceStatus } from '@/types';
+import { notifications as initialNotifs, vendors as initialVendors, purchaseOrders as initialPOs, invoices as initialInvoices } from '@/data/mockData';
 
 // ─── Auth Store ────────────────────────────────────────────────
 interface AuthState {
@@ -68,3 +68,105 @@ export const useNotifStore = create<NotifState>()((set, get) => ({
     set((s) => ({ notifications: s.notifications.map((n) => ({ ...n, read: true })) })),
   unreadCount: () => get().notifications.filter((n) => !n.read).length,
 }));
+
+// ─── Data Store ────────────────────────────────────────────────
+interface DataState {
+  vendors: Vendor[];
+  purchaseOrders: PurchaseOrder[];
+  invoices: Invoice[];
+  addPurchaseOrder: (po: Omit<PurchaseOrder, 'id' | 'number' | 'createdAt' | 'status'>) => void;
+  approvePurchaseOrder: (poId: string, approverName: string) => void;
+  updateInvoiceStatus: (invoiceId: string, status: InvoiceStatus) => void;
+  addVendor: (vendor: Omit<Vendor, 'id' | 'joinedAt' | 'totalSpend' | 'totalOrders' | 'rating' | 'onTimeDelivery' | 'qualityScore'>) => void;
+}
+
+export const useDataStore = create<DataState>()(
+  persist(
+    (set) => ({
+      vendors: initialVendors,
+      purchaseOrders: initialPOs,
+      invoices: initialInvoices,
+      addPurchaseOrder: (poData) =>
+        set((state) => {
+          const nextNumber = `PO-2026-${String(state.purchaseOrders.length + 85).padStart(4, '0')}`;
+          const newPo: PurchaseOrder = {
+            ...poData,
+            id: `po${state.purchaseOrders.length + 1}`,
+            number: nextNumber,
+            status: 'pending',
+            createdAt: new Date().toISOString().split('T')[0],
+          };
+          return { purchaseOrders: [newPo, ...state.purchaseOrders] };
+        }),
+      approvePurchaseOrder: (poId, approverName) =>
+        set((state) => {
+          const purchaseOrders = state.purchaseOrders.map((p) => {
+            if (p.id !== poId) return p;
+            return { ...p, status: 'approved' as const, approvedBy: approverName };
+          });
+          const po = state.purchaseOrders.find((p) => p.id === poId);
+          let invoices = state.invoices;
+          if (po && !state.invoices.some((i) => i.poId === poId)) {
+            const nextInvNum = `INV-2026-${String(state.invoices.length + 212).padStart(4, '0')}`;
+            const newInvoice: Invoice = {
+              id: `inv${state.invoices.length + 1}`,
+              number: nextInvNum,
+              poId: po.id,
+              poNumber: po.number,
+              vendorId: po.vendorId,
+              vendorName: po.vendorName,
+              status: 'unpaid',
+              amount: po.total,
+              tax: po.tax,
+              total: po.total,
+              currency: po.currency,
+              issueDate: new Date().toISOString().split('T')[0],
+              dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              items: po.lineItems,
+            };
+            invoices = [newInvoice, ...invoices];
+          }
+          return { purchaseOrders, invoices };
+        }),
+      updateInvoiceStatus: (invoiceId, status) =>
+        set((state) => {
+          const invoice = state.invoices.find((i) => i.id === invoiceId);
+          let vendors = state.vendors;
+          if (invoice && status === 'paid' && invoice.status !== 'paid') {
+            vendors = state.vendors.map((v) => {
+              if (v.id !== invoice.vendorId) return v;
+              return {
+                ...v,
+                totalSpend: v.totalSpend + invoice.total,
+                totalOrders: v.totalOrders + 1,
+              };
+            });
+          }
+          const invoices = state.invoices.map((i) => {
+            if (i.id !== invoiceId) return i;
+            const updated: Invoice = { ...i, status };
+            if (status === 'paid') {
+              updated.paidDate = new Date().toISOString().split('T')[0];
+            }
+            return updated;
+          });
+          return { invoices, vendors };
+        }),
+      addVendor: (vendorData) =>
+        set((state) => {
+          const newVendor: Vendor = {
+            ...vendorData,
+            id: `v${state.vendors.length + 1}`,
+            joinedAt: new Date().toISOString().split('T')[0],
+            totalSpend: 0,
+            totalOrders: 0,
+            rating: 0,
+            onTimeDelivery: 0,
+            qualityScore: 0,
+          };
+          return { vendors: [...state.vendors, newVendor] };
+        }),
+    }),
+    { name: 'vb-data' }
+  )
+);

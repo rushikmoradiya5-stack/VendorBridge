@@ -1,11 +1,12 @@
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Star, Mail, Phone, MapPin, Calendar, ExternalLink, TrendingUp } from 'lucide-react';
-import { vendors, purchaseOrders, invoices } from '@/data/mockData';
+import { useDataStore } from '@/store';
 import { currency, formatDate, statusColor, cn } from '@/lib/utils';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 
 export default function VendorDetail() {
   const { id } = useParams();
+  const { vendors, purchaseOrders, invoices } = useDataStore();
   const vendor = vendors.find((v) => v.id === id);
 
   if (!vendor) {

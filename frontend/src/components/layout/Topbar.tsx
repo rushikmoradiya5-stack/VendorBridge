@@ -27,7 +27,7 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
   }, []);
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0 z-20">
+    <header className="h-16 bg-slate-100/40 border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0 z-20 backdrop-blur-md">
       {/* Left */}
       <div className="flex items-center gap-4">
         <button onClick={toggleSidebar} className="lg:hidden btn-icon btn-ghost">
@@ -68,20 +68,20 @@ export default function Topbar({ title, subtitle }: TopbarProps) {
 
           {notifOpen && (
             <div className="absolute right-0 top-full mt-2 w-80 card shadow-card-hover z-50 overflow-hidden animate-slide-up">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
                 <p className="text-sm font-semibold text-slate-800">Notifications</p>
                 <button onClick={markAllRead} className="text-xs text-brand-600 hover:underline">
                   Mark all read
                 </button>
               </div>
-              <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+              <div className="max-h-72 overflow-y-auto divide-y divide-slate-200/50">
                 {notifications.map((n) => (
                   <button
                     key={n.id}
                     onClick={() => markRead(n.id)}
                     className={cn(
-                      'w-full text-left px-4 py-3 hover:bg-slate-50 transition-fast',
-                      !n.read && 'bg-brand-50'
+                      'w-full text-left px-4 py-3 hover:bg-slate-200/40 transition-fast',
+                      !n.read && 'bg-brand-500/10'
                     )}
                   >
                     <div className="flex items-start gap-2">

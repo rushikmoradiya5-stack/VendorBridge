@@ -1,10 +1,11 @@
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Printer, CheckCircle2, AlertCircle } from 'lucide-react';
-import { invoices } from '@/data/mockData';
+import { useDataStore } from '@/store';
 import { currency, formatDate, statusColor, cn } from '@/lib/utils';
 
 export default function InvoiceDetail() {
   const { id } = useParams();
+  const { invoices, updateInvoiceStatus } = useDataStore();
   const inv = invoices.find((i) => i.id === id);
 
   if (!inv) {
@@ -34,8 +35,22 @@ export default function InvoiceDetail() {
         </div>
         <div className="flex gap-2">
           <button className="btn btn-outline btn-sm"><Printer className="w-4 h-4" /> Export PDF</button>
-          {inv.status === 'unpaid' && <button className="btn btn-success btn-sm"><CheckCircle2 className="w-4 h-4" /> Mark Paid</button>}
-          {inv.status === 'overdue' && <button className="btn btn-danger btn-sm"><AlertCircle className="w-4 h-4" /> Escalate</button>}
+          {inv.status === 'unpaid' && (
+            <button 
+              onClick={() => updateInvoiceStatus(inv.id, 'paid')} 
+              className="btn btn-success btn-sm"
+            >
+              <CheckCircle2 className="w-4 h-4" /> Mark Paid
+            </button>
+          )}
+          {inv.status === 'overdue' && (
+            <button 
+              onClick={() => updateInvoiceStatus(inv.id, 'disputed')} 
+              className="btn btn-danger btn-sm"
+            >
+              <AlertCircle className="w-4 h-4" /> Escalate
+            </button>
+          )}
         </div>
       </div>
 
@@ -139,10 +154,20 @@ export default function InvoiceDetail() {
             <h2 className="font-heading font-semibold text-slate-800 mb-3">Actions</h2>
             <div className="space-y-2">
               {inv.status === 'unpaid' && (
-                <button className="btn btn-success w-full justify-center"><CheckCircle2 className="w-4 h-4" /> Mark as Paid</button>
+                <button 
+                  onClick={() => updateInvoiceStatus(inv.id, 'paid')} 
+                  className="btn btn-success w-full justify-center"
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Mark as Paid
+                </button>
               )}
               {inv.status === 'overdue' && (
-                <button className="btn btn-danger w-full justify-center"><AlertCircle className="w-4 h-4" /> Escalate to Finance</button>
+                <button 
+                  onClick={() => updateInvoiceStatus(inv.id, 'disputed')} 
+                  className="btn btn-danger w-full justify-center"
+                >
+                  <AlertCircle className="w-4 h-4" /> Escalate to Finance
+                </button>
               )}
               <button className="btn btn-outline w-full justify-center"><Printer className="w-4 h-4" /> Export PDF</button>
               {inv.poId && (

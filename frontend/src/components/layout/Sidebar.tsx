@@ -42,9 +42,7 @@ export default function Sidebar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border flex-shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center flex-shrink-0">
-          <Building2 className="w-4 h-4 text-white" />
-        </div>
+        <img src="/logo.jpg" alt="Logo" className="w-8 h-8 rounded-lg object-cover border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)] flex-shrink-0" />
         <AnimatePresence>
           {!collapsed && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>

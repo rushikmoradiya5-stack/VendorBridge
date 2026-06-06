@@ -2,17 +2,28 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Search, LayoutGrid, List, Star, MapPin, ExternalLink } from 'lucide-react';
-import { vendors } from '@/data/mockData';
+import { useDataStore } from '@/store';
 import { currency, statusColor, cn } from '@/lib/utils';
 
-const CATEGORIES = ['All', ...Array.from(new Set(vendors.map((v) => v.category))).sort()];
+const CATEGORIES = ['All', 'IT & Software', 'Manufacturing', 'Office Supplies', 'Raw Materials', 'Cloud & Hosting', 'Logistics', 'Security'];
 const STATUSES = ['All', 'active', 'inactive', 'pending', 'blacklisted'];
 
 export default function Vendors() {
+  const { vendors, addVendor } = useDataStore();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [status, setStatus] = useState('All');
   const [view, setView] = useState<'table' | 'grid'>('table');
+
+  // Modal states
+  const [modalOpen, setModalOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [cat, setCat] = useState('IT & Software');
+  const [contact, setContact] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [country, setCountry] = useState('USA');
+  const [tagsInput, setTagsInput] = useState('');
 
   const filtered = vendors.filter((v) => {
     const q = search.toLowerCase();
@@ -23,6 +34,32 @@ export default function Vendors() {
     );
   });
 
+  const handleAddVendor = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !contact || !email) return;
+
+    addVendor({
+      name,
+      category: cat,
+      contact,
+      email,
+      phone,
+      country,
+      status: 'active',
+      tags: tagsInput.split(',').map((t) => t.trim()).filter(Boolean),
+    });
+
+    // Reset
+    setName('');
+    setCat('IT & Software');
+    setContact('');
+    setEmail('');
+    setPhone('');
+    setCountry('USA');
+    setTagsInput('');
+    setModalOpen(false);
+  };
+
   return (
     <div className="p-6 space-y-5">
       {/* Header */}
@@ -31,9 +68,9 @@ export default function Vendors() {
           <h1 className="text-2xl font-heading font-bold text-slate-800">Vendors</h1>
           <p className="text-sm text-slate-400 mt-0.5">{vendors.length} registered suppliers</p>
         </div>
-        <Link to="/vendors/new" className="btn btn-primary">
+        <button onClick={() => setModalOpen(true)} className="btn btn-primary">
           <Plus className="w-4 h-4" /> Add Vendor
-        </Link>
+        </button>
       </div>
 
       {/* Filters */}
@@ -177,6 +214,68 @@ export default function Vendors() {
               </Link>
             </motion.div>
           ))}
+        </div>
+      )}
+
+      {/* Add Vendor Modal */}
+      {modalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-slate-100 rounded-2xl w-full max-w-md border border-slate-200 shadow-2xl p-6 animate-slide-up space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+              <h2 className="text-lg font-heading font-bold text-slate-800">Add New Vendor</h2>
+              <button onClick={() => setModalOpen(false)} className="btn-icon btn-ghost text-slate-400 hover:text-slate-600">
+                <Plus className="w-5 h-5 rotate-45" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddVendor} className="space-y-3">
+              <div>
+                <label className="label">Company Name *</label>
+                <input className="input text-sm" type="text" value={name} onChange={(e) => setName(e.target.value)} required placeholder="e.g. Acme Corp" />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Category *</label>
+                  <select className="input text-sm" value={cat} onChange={(e) => setCat(e.target.value)} required>
+                    {CATEGORIES.filter((c) => c !== 'All').map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Country *</label>
+                  <input className="input text-sm" type="text" value={country} onChange={(e) => setCountry(e.target.value)} required placeholder="e.g. USA" />
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Contact Person *</label>
+                <input className="input text-sm" type="text" value={contact} onChange={(e) => setContact(e.target.value)} required placeholder="e.g. John Doe" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Email *</label>
+                  <input className="input text-sm" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="john@acme.com" />
+                </div>
+                <div>
+                  <label className="label">Phone *</label>
+                  <input className="input text-sm" type="text" value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="+1 555 0199" />
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Tags (comma-separated)</label>
+                <input className="input text-sm" type="text" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder="e.g. preferred, strategic" />
+              </div>
+
+              <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
+                <button type="button" onClick={() => setModalOpen(false)} className="btn btn-outline">Cancel</button>
+                <button type="submit" className="btn btn-primary">Add Supplier</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

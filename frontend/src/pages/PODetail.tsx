@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Building, Calendar, CheckCircle2, Clock, Send, Package, X, Printer } from 'lucide-react';
-import { purchaseOrders, vendors } from '@/data/mockData';
+import { useDataStore, useAuthStore } from '@/store';
 import { currency, formatDate, statusColor, priorityColor, cn } from '@/lib/utils';
 
 const timeline = (status: string) => {
@@ -16,6 +16,9 @@ const timeline = (status: string) => {
 
 export default function PODetail() {
   const { id } = useParams();
+  const { purchaseOrders, vendors, approvePurchaseOrder } = useDataStore();
+  const { user } = useAuthStore();
+  
   const po = purchaseOrders.find((p) => p.id === id);
   const vendor = vendors.find((v) => v.id === po?.vendorId);
 
@@ -48,7 +51,14 @@ export default function PODetail() {
         <div className="flex gap-2">
           <button className="btn btn-outline btn-sm"><Printer className="w-4 h-4" /> Print / Export PDF</button>
           {po.status === 'draft' && <button className="btn btn-primary btn-sm"><Send className="w-4 h-4" /> Submit for Approval</button>}
-          {po.status === 'pending' && <button className="btn btn-success btn-sm"><CheckCircle2 className="w-4 h-4" /> Approve</button>}
+          {po.status === 'pending' && (
+            <button 
+              onClick={() => approvePurchaseOrder(po.id, user?.name || 'Sarah Manager')} 
+              className="btn btn-success btn-sm"
+            >
+              <CheckCircle2 className="w-4 h-4" /> Approve
+            </button>
+          )}
         </div>
       </div>
 

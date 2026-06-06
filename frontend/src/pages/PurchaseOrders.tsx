@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Search, Filter } from 'lucide-react';
-import { purchaseOrders } from '@/data/mockData';
+import { useDataStore } from '@/store';
 import { currency, formatDate, statusColor, priorityColor, cn } from '@/lib/utils';
 import type { POStatus } from '@/types';
 
@@ -17,6 +17,7 @@ const STATUS_TABS: { label: string; value: string }[] = [
 ];
 
 export default function PurchaseOrders() {
+  const { purchaseOrders } = useDataStore();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('all');
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, AlertCircle } from 'lucide-react';
-import { invoices } from '@/data/mockData';
+import { useDataStore } from '@/store';
 import { currency, formatDate, statusColor, cn } from '@/lib/utils';
 
 const TABS = [
@@ -15,6 +15,7 @@ const TABS = [
 ];
 
 export default function Invoices() {
+  const { invoices } = useDataStore();
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
 

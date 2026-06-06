@@ -1,0 +1,48 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  background-color: var(--color-cyan);
+  color: #ffffff;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cyan {
+  background-color: var(--color-cyan);
+}
+
+.green {
+  background-color: var(--color-green);
+}
+
+/* Interactive hover with neon green outline/shadow glow */
+.button:hover,
+.button:focus-visible {
+  background-color: var(--color-green-hover) !important;
+  border-color: var(--color-green);
+  box-shadow: 
+    0 0 0 2px rgba(16, 185, 129, 0.2),
+    0 0 16px var(--color-green-glow),
+    0 4px 12px rgba(0, 0, 0, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Pronounced click compression */
+.button:active {
+  transform: scale(0.97) translateY(0);
+}
+
+/* Accessible focus outline */
+.button:focus-visible {
+  border-color: #ffffff;
+}
